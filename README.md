@@ -33,95 +33,101 @@ One form means one list, one endpoint, and one place to change the copy.
 
 ## Setup, once
 
-You need a Cloudflare account and Node installed.
+The site deploys from this GitHub repository: you connect it to a Cloudflare
+Pages project once, and every push after that deploys on its own. Only the
+database has to be created from your own machine, because `wrangler d1 create`
+needs your Cloudflare login.
 
-> **Do these in order.** Connecting this repo to Pages before step 2 gives
-> Cloudflare a D1 binding that points at a database which does not exist yet.
-> Create the database first and the rest is uneventful.
+### 1 — Create the database, before connecting anything
 
 ```bash
 npm install
 npx wrangler login
-```
-
-**1 — Create the database.**
-
-```bash
 npm run db:create
 ```
 
-**2 — Paste the id it prints into `wrangler.toml`**, replacing
-`PASTE_YOUR_DATABASE_ID_HERE`. Commit that change. The id is an identifier,
-not a secret.
-
-**3 — Create the table.**
+Paste the `database_id` it prints into `wrangler.toml`, replacing
+`PASTE_YOUR_DATABASE_ID_HERE`. Then create the table and push:
 
 ```bash
 npm run db:init
+git commit -am "Add D1 database id"
+git push
 ```
 
-**4 — Deploy.**
+Do this first. Until that id is real, `wrangler.toml` declares a D1 binding
+naming a database that does not exist. The id is an identifier rather than a
+secret, so committing it is expected.
+
+### 2 — Connect the repo to a Pages project
+
+In the Cloudflare dashboard, create a **Pages** project connected to this
+GitHub repository. What matters is the configuration, not the route you take
+to it:
+
+| Setting | Value |
+| --- | --- |
+| Production branch | this repo's default branch |
+| Build command | **empty** — nothing here compiles |
+| Build output directory | `public` |
+| Deploy command | **empty**, if the form offers one at all |
+
+That last row is the one to watch. A Pages build publishes `public/` and runs
+no deploy command; a build that runs `npx wrangler deploy` is configured as a
+Worker and will fail against this repo. See *If the build fails* below for
+what that looks like.
+
+`functions/` is picked up automatically — it sits at the repo root, beside
+`public/`, which is where Pages looks for it. `wrangler.toml` supplies the
+output directory and the D1 binding.
+
+Cloudflare runs `npm clean-install` because a `package.json` is present. That
+is expected, takes a few seconds, and compiles nothing.
+
+### 3 — Set the secrets
+
+Generate long random values — `openssl rand -hex 32` is fine for each — and
+set them against the project you just created:
 
 ```bash
-npm run deploy
+npx wrangler pages secret put ADMIN_TOKEN        --project-name <your-project>
+npx wrangler pages secret put UNSUBSCRIBE_SECRET --project-name <your-project>
+npx wrangler pages secret put IP_SALT            --project-name <your-project>
 ```
 
-The first deploy asks you to name the Pages project — `give-get-grateful`
-matches the config. You'll get a `*.pages.dev` URL immediately.
+They can also be added in the dashboard as encrypted environment variables,
+which amounts to the same thing. The site works without them, but the export
+endpoint refuses to run until `ADMIN_TOKEN` exists — the safe way round.
 
-**5 — Set the secrets.** Generate long random values for all three;
-`openssl rand -hex 32` is fine.
+### Deploying by hand instead
 
-```bash
-npx wrangler pages secret put ADMIN_TOKEN          # protects /api/export
-npx wrangler pages secret put UNSUBSCRIBE_SECRET   # signs unsubscribe links
-npx wrangler pages secret put IP_SALT              # salts the stored IP hash
-```
-
-The site works without them, but the export endpoint refuses to run until
-`ADMIN_TOKEN` exists — which is the safe way round.
-
-**6 — Connect the git repo, so every push deploys.** In the Cloudflare
-dashboard: *Workers & Pages → your project → Settings → Build*, connect this
-repository and set the production branch. Build output directory is `public`;
-leave the build command empty, since there is nothing to compile.
-
-Cloudflare still runs `npm clean-install` because a `package.json` is present.
-That is expected and takes a few seconds. Two lines in that log look alarming
-and are not:
-
-```
-npm warn allow-scripts 2 packages have install scripts not yet covered by allowScripts
-npm warn allow-scripts   esbuild@0.28.1 (postinstall: node install.js)
-```
-
-`esbuild` arrives as a dependency of `wrangler`, which is only used from your
-own machine. Nothing in the published site needs it, so a skipped postinstall
-changes nothing. A build that is genuinely failing says so explicitly, with a
-non-zero exit code on its last line.
+`npm run deploy` uploads `public/` directly, without involving GitHub. It is
+useful for a one-off, but a project created this way is a *direct upload*
+project, and Cloudflare may not let you attach a repository to it afterwards.
+Prefer the steps above.
 
 ## If the build fails
 
 **`Missing entry-point to Worker script or to assets directory`**, with a
-warning just above it saying *"It seems that you have run `wrangler deploy` on
-a Pages project"*.
+warning just above it reading *"It seems that you have run `wrangler deploy`
+on a Pages project, `wrangler pages deploy` should be used instead."*
 
-The project is a **Worker**, not a **Pages** project. Cloudflare's *Import a
-repository* flow creates Workers, and Workers projects run `npx wrangler
-deploy` — which looks for a Worker entry point this repo doesn't have. A Pages
-project runs no deploy command at all; it just publishes `public/`.
+The project was created as a **Worker**, not a **Pages** project. Workers
+projects deploy by running `npx wrangler deploy`, which looks for a Worker
+entry point — a `main` in `wrangler.toml`, or an `[assets]` directory. This
+repo has neither, because a Pages project needs neither: it publishes
+`public/` and serves `functions/` alongside it.
 
-Deploy with `npm run deploy` from your own machine instead, which creates a
-Pages project of the right kind. The Worker project can be deleted.
+Nothing in the repo needs changing. Create a Pages project against the same
+repository instead, per step 2 above, and delete the Worker one. You can tell
+the two apart from the build log: the Worker build runs `wrangler deploy`, and
+a Pages build does not run a deploy command at all.
 
-Note that a Pages project created this way is a *direct upload* project.
-Cloudflare does not appear to offer a way to convert one into a
-Git-connected project afterwards, so if you later want every push to deploy
-on its own, expect to create a second project through the Pages tab →
-*Connect to Git* rather than converting this one. Deploying by hand is one
-command, so this is worth doing only if you want it.
-
-**`npm warn allow-scripts ... esbuild`** is not a failure — see step 6 above.
+**`npm warn allow-scripts ... esbuild`** is not a failure. `esbuild` arrives
+as a dependency of `wrangler`, which only ever runs from your own machine —
+nothing in the published site uses it, so a skipped postinstall changes
+nothing. A build that is genuinely failing says so on its last line, with a
+non-zero exit.
 
 ## Getting your list out
 
