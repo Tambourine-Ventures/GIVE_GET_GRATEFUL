@@ -100,6 +100,29 @@ own machine. Nothing in the published site needs it, so a skipped postinstall
 changes nothing. A build that is genuinely failing says so explicitly, with a
 non-zero exit code on its last line.
 
+## If the build fails
+
+**`Missing entry-point to Worker script or to assets directory`**, with a
+warning just above it saying *"It seems that you have run `wrangler deploy` on
+a Pages project"*.
+
+The project is a **Worker**, not a **Pages** project. Cloudflare's *Import a
+repository* flow creates Workers, and Workers projects run `npx wrangler
+deploy` — which looks for a Worker entry point this repo doesn't have. A Pages
+project runs no deploy command at all; it just publishes `public/`.
+
+Deploy with `npm run deploy` from your own machine instead, which creates a
+Pages project of the right kind. The Worker project can be deleted.
+
+Note that a Pages project created this way is a *direct upload* project.
+Cloudflare does not appear to offer a way to convert one into a
+Git-connected project afterwards, so if you later want every push to deploy
+on its own, expect to create a second project through the Pages tab →
+*Connect to Git* rather than converting this one. Deploying by hand is one
+command, so this is worth doing only if you want it.
+
+**`npm warn allow-scripts ... esbuild`** is not a failure — see step 6 above.
+
 ## Getting your list out
 
 ```bash
