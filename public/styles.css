@@ -180,6 +180,7 @@ a:hover { color: var(--accent-dk); }
 /* Mirrors the columns as well as the order, so the text column stays the wide
    one when the aside moves to the left. Declared before the stacking query
    below, which must win at narrow widths. */
+.split-middle { align-items: center; }
 .split-reverse { grid-template-columns: minmax(0, .85fr) minmax(0, 1.25fr); }
 .split-reverse .split-main { order: 2; }
 .split-reverse .split-side { order: 1; }
@@ -204,21 +205,24 @@ a:hover { color: var(--accent-dk); }
   padding: 26px; box-shadow: 0 14px 40px -24px rgba(60,40,20,.5);
 }
 .book-cover {
-  aspect-ratio: 2 / 3;
+  position: relative;
+  aspect-ratio: 2 / 3;              /* matches the artwork, so nothing crops */
   border-radius: 6px 12px 12px 6px;
-  background: linear-gradient(150deg, var(--accent) 0%, #8E3A1C 55%, #5E2711 100%);
-  box-shadow: inset 12px 0 18px -14px rgba(0,0,0,.65), 0 10px 26px -14px rgba(60,20,10,.6);
-  display: grid; place-items: center; padding: 24px; overflow: hidden;
+  background: var(--paper-alt);
+  box-shadow: 0 10px 26px -14px rgba(60, 20, 10, .6);
+  overflow: hidden;
 }
-.book-cover-title {
-  font-family: var(--display); font-weight: 600; font-style: italic;
-  font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.12; color: #FBEFDF;
-  text-align: center; letter-spacing: -0.01em;
+.book-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Spine shading, drawn over the artwork — an inset shadow would sit behind it. */
+.book-cover::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,.30) 0%, rgba(0,0,0,.07) 4%, transparent 10%);
 }
 .book-meta { margin: 24px 0 0; display: grid; gap: 12px; }
 .book-meta > div { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid var(--rule); padding-top: 11px; font-size: .92rem; }
 .book-meta dt { color: var(--ink-faint); margin: 0; }
 .book-meta dd { margin: 0; font-weight: 500; text-align: right; }
+@media (max-width: 900px) { .book-card { max-width: 380px; margin-inline: auto; } }
 
 /* ---------------- Offers ---------------- */
 .offers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }

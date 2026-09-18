@@ -135,16 +135,16 @@ how much they matter:
    `public/robots.txt`, `public/sitemap.xml`.
 3. **The email address** — `hello@givegetgrateful.com` appears in
    `index.html`, `privacy.html`, and `public/app.js`.
-4. **The book cover** — drop in `cover.jpg` and swap the CSS placeholder
-   (commented in `index.html`). Export `og.svg` to a 1200×630 `og.png`;
-   most social platforms won't render an SVG preview.
+4. **The social preview** — export `og.svg` to a 1200×630 `og.png`; most
+   social platforms won't render an SVG preview.
 5. **Colours** — the `:root` block at the top of `styles.css`. Change
    `--accent` and the whole page follows.
 
-The author photo is `public/portrait.jpg` at 999×1501, which covers a 2×
-display at every breakpoint. It ships as-is rather than re-encoded; turn on
-Cloudflare Polish in the dashboard if you want WebP/AVIF served at the edge
-without touching the source file.
+Images: `public/portrait.jpg` (999×1501) and `public/cover.webp` (1024×1536)
+both have enough resolution for a 2× display at every breakpoint — the widest
+either one renders is 454 and 348 CSS pixels respectively. The photo ships
+as supplied rather than re-encoded; turn on Cloudflare Polish in the dashboard
+if you want WebP/AVIF served at the edge without touching the source files.
 
 ## Notes on the form's defences
 
