@@ -129,19 +129,22 @@ That serves the real Functions against a local D1 file at
 Search the source for `EDIT ME` — every placeholder is marked. In order of
 how much they matter:
 
-1. **`public/index.html`** — the premise sentence in the hero, the book
-   description, the three consulting formats, and the About section (name, bio,
-   real links). The copy shipped here is written to be plausible, not final;
-   it's scaffolding for your voice.
+1. **The premise sentence in the hero** — the one line under the title is
+   still scaffolding. Everything else in `index.html` is real copy.
 2. **The domain** — `index.html` (canonical + Open Graph URLs),
    `public/robots.txt`, `public/sitemap.xml`.
 3. **The email address** — `hello@givegetgrateful.com` appears in
    `index.html`, `privacy.html`, and `public/app.js`.
-4. **Images** — drop in `cover.jpg` and `portrait.jpg` and swap the two CSS
-   placeholders (both are commented in `index.html`). Export `og.svg` to a
-   1200×630 `og.png`; most social platforms won't render an SVG preview.
+4. **The book cover** — drop in `cover.jpg` and swap the CSS placeholder
+   (commented in `index.html`). Export `og.svg` to a 1200×630 `og.png`;
+   most social platforms won't render an SVG preview.
 5. **Colours** — the `:root` block at the top of `styles.css`. Change
    `--accent` and the whole page follows.
+
+The author photo is `public/portrait.jpg` at 999×1501, which covers a 2×
+display at every breakpoint. It ships as-is rather than re-encoded; turn on
+Cloudflare Polish in the dashboard if you want WebP/AVIF served at the edge
+without touching the source file.
 
 ## Notes on the form's defences
 
