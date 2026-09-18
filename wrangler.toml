@@ -5,9 +5,16 @@ name = "give-get-grateful"
 compatibility_date = "2025-09-01"
 pages_build_output_dir = "public"
 
-# The signup database. Create it once with:
+# The signup database.
+#
+# IMPORTANT: create it and paste the real id below BEFORE you connect this
+# repo to Cloudflare Pages. A build of a repo that still says
+# PASTE_YOUR_DATABASE_ID_HERE has a D1 binding pointing at a database that
+# does not exist, and there is nothing for Cloudflare to attach.
+#
 #   npx wrangler d1 create ggg-signups
-# then paste the printed database_id below.
+#
+# The id is an identifier, not a secret — committing it is expected.
 [[d1_databases]]
 binding = "DB"
 database_name = "ggg-signups"

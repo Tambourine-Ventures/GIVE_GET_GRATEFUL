@@ -35,25 +35,32 @@ One form means one list, one endpoint, and one place to change the copy.
 
 You need a Cloudflare account and Node installed.
 
+> **Do these in order.** Connecting this repo to Pages before step 2 gives
+> Cloudflare a D1 binding that points at a database which does not exist yet.
+> Create the database first and the rest is uneventful.
+
 ```bash
 npm install
 npx wrangler login
 ```
 
-**1 — Create the database.** Copy the `database_id` it prints into
-`wrangler.toml`, replacing `PASTE_YOUR_DATABASE_ID_HERE`.
+**1 — Create the database.**
 
 ```bash
 npm run db:create
 ```
 
-**2 — Create the table.**
+**2 — Paste the id it prints into `wrangler.toml`**, replacing
+`PASTE_YOUR_DATABASE_ID_HERE`. Commit that change. The id is an identifier,
+not a secret.
+
+**3 — Create the table.**
 
 ```bash
 npm run db:init
 ```
 
-**3 — Deploy.**
+**4 — Deploy.**
 
 ```bash
 npm run deploy
@@ -62,8 +69,8 @@ npm run deploy
 The first deploy asks you to name the Pages project — `give-get-grateful`
 matches the config. You'll get a `*.pages.dev` URL immediately.
 
-**4 — Set the secrets.** Generate long random values for the first three;
-`openssl rand -hex 32` is fine for all of them.
+**5 — Set the secrets.** Generate long random values for all three;
+`openssl rand -hex 32` is fine.
 
 ```bash
 npx wrangler pages secret put ADMIN_TOKEN          # protects /api/export
@@ -74,11 +81,24 @@ npx wrangler pages secret put IP_SALT              # salts the stored IP hash
 The site works without them, but the export endpoint refuses to run until
 `ADMIN_TOKEN` exists — which is the safe way round.
 
-**5 — Connect the git repo (recommended).** In the Cloudflare dashboard:
-*Workers & Pages → your project → Settings → Build*, connect this repository
-and set the production branch. Every push then deploys automatically, and the
-D1 binding you configured stays attached. Set the build output directory to
-`public` and leave the build command empty — there's nothing to compile.
+**6 — Connect the git repo, so every push deploys.** In the Cloudflare
+dashboard: *Workers & Pages → your project → Settings → Build*, connect this
+repository and set the production branch. Build output directory is `public`;
+leave the build command empty, since there is nothing to compile.
+
+Cloudflare still runs `npm clean-install` because a `package.json` is present.
+That is expected and takes a few seconds. Two lines in that log look alarming
+and are not:
+
+```
+npm warn allow-scripts 2 packages have install scripts not yet covered by allowScripts
+npm warn allow-scripts   esbuild@0.28.1 (postinstall: node install.js)
+```
+
+`esbuild` arrives as a dependency of `wrangler`, which is only used from your
+own machine. Nothing in the published site needs it, so a skipped postinstall
+changes nothing. A build that is genuinely failing says so explicitly, with a
+non-zero exit code on its last line.
 
 ## Getting your list out
 
