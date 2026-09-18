@@ -124,21 +124,48 @@ npm run dev
 That serves the real Functions against a local D1 file at
 `http://localhost:8788`.
 
-## What to edit before you launch
+## What's left before you launch
 
-Search the source for `EDIT ME` — every placeholder is marked. In order of
-how much they matter:
+Two values still point at placeholders: your **domain** and your **email
+address**. One command sets both, everywhere they appear:
 
-1. **The premise sentence in the hero** — the one line under the title is
-   still scaffolding. Everything else in `index.html` is real copy.
-2. **The domain** — `index.html` (canonical + Open Graph URLs),
-   `public/robots.txt`, `public/sitemap.xml`.
-3. **The email address** — `hello@givegetgrateful.com` appears in
-   `index.html`, `privacy.html`, and `public/app.js`.
-4. **The social preview** — export `og.svg` to a 1200×630 `og.png`; most
-   social platforms won't render an SVG preview.
-5. **Colours** — the `:root` block at the top of `styles.css`. Change
-   `--accent` and the whole page follows.
+```bash
+python3 tools/set-site-details.py yourdomain.com you@yourdomain.com
+```
+
+It rewrites `index.html`, `privacy.html`, `app.js`, `robots.txt` and
+`sitemap.xml`, prints what it changed, and is safe to run twice. Review with
+`git diff` before committing.
+
+### The domain
+
+The site works immediately on the free `*.pages.dev` URL Cloudflare gives you
+— a custom domain is about how it reads, not whether it runs. To attach one:
+buy it anywhere, then in the Cloudflare dashboard go to your Pages project →
+*Custom domains* → *Set up a domain*. If the domain is already on Cloudflare
+the DNS record is added for you; otherwise Cloudflare shows the record to add
+at your registrar. HTTPS is automatic either way.
+
+Until you have one, you can run the command above with your `.pages.dev`
+address and the canonical URLs will at least be correct.
+
+### The email address
+
+Anywhere you'll actually read is fine — the address appears as a fallback
+when a form submission fails, and in the privacy notice as the way to ask for
+deletion. A plain Gmail address works. If you'd rather have `hello@` at your
+own domain without running a mailbox, Cloudflare Email Routing (dashboard →
+your domain → *Email*) forwards it to an inbox you already have, free.
+
+### Optional
+
+- **Colours** — the `:root` block at the top of `styles.css`. Change
+  `--accent` and the whole page follows.
+- **Social preview card** — `public/og.jpg` is done: 1200×630, rendered from
+  `tools/og-card.html`. If the subtitle, author name or cover changes, open
+  that file in a browser and screenshot it at exactly 1200×630, or ask Claude
+  to re-render it. Keep the output as JPEG — the same card as a PNG is about
+  five times larger for no visible gain.
 
 Images: `public/portrait.jpg` (999×1501) and `public/cover.webp` (1024×1536)
 both have enough resolution for a 2× display at every breakpoint — the widest
