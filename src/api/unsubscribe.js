@@ -7,9 +7,9 @@
  * deleted, so a later signup can't silently resurrect the subscription.
  */
 
-import { safeEqual, sign } from "../_shared.js";
+import { safeEqual, sign } from "../shared.js";
 
-export async function onRequest(context) {
+export async function handle(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const email = (url.searchParams.get("e") || "").trim().toLowerCase();

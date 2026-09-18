@@ -5,19 +5,20 @@ around it, with a sign-up form that writes straight into a Cloudflare D1
 database. No third-party form service, no monthly fee, no tracking scripts.
 
 ```
-public/            everything served as-is (the Pages build output directory)
+public/            everything served as-is, via the Worker's assets binding
   index.html       the landing page
   privacy.html     privacy notice — matches what the code actually stores
   styles.css       all styling; the palette lives in :root at the top
   app.js           form behaviour, ~140 lines, no dependencies
   og.svg           source for the social preview image
-functions/
-  _shared.js       json(), hashIp(), safeEqual(), sign()
+src/
+  index.js         the Worker: routes /api/*, hands everything else to assets
+  shared.js        json(), hashIp(), safeEqual(), sign()
   api/subscribe.js   POST — validates and stores a signup
   api/export.js      GET  — your private CSV/JSON export (token protected)
   api/unsubscribe.js GET  — one-click unsubscribe via signed link
 schema.sql         the D1 table and its indexes
-wrangler.toml      Pages + D1 configuration
+wrangler.toml      Worker, static assets and D1 configuration
 ```
 
 ## How the page is put together
@@ -33,10 +34,10 @@ One form means one list, one endpoint, and one place to change the copy.
 
 ## Setup, once
 
-The site deploys from this GitHub repository: you connect it to a Cloudflare
-Pages project once, and every push after that deploys on its own. Only the
-database has to be created from your own machine, because `wrangler d1 create`
-needs your Cloudflare login.
+The site deploys from this GitHub repository: you connect it to Cloudflare
+once, and every push after that deploys on its own. Only the database has to
+be created from your own machine, because `wrangler d1 create` needs your
+Cloudflare login and nothing else does.
 
 ### 1 — Create the database, before connecting anything
 
@@ -59,30 +60,23 @@ Do this first. Until that id is real, `wrangler.toml` declares a D1 binding
 naming a database that does not exist. The id is an identifier rather than a
 secret, so committing it is expected.
 
-### 2 — Connect the repo to a Pages project
+### 2 — Connect the repo
 
-In the Cloudflare dashboard, create a **Pages** project connected to this
-GitHub repository. What matters is the configuration, not the route you take
-to it:
+In the Cloudflare dashboard, import this GitHub repository. The defaults its
+repository import produces are already correct for this project:
 
 | Setting | Value |
 | --- | --- |
+| Build command | **None** — nothing here compiles |
+| Deploy command | `npx wrangler deploy` |
+| Root directory | `/` |
 | Production branch | this repo's default branch |
-| Build command | **empty** — nothing here compiles |
-| Build output directory | `public` |
-| Deploy command | **empty**, if the form offers one at all |
 
-That last row is the one to watch. A Pages build publishes `public/` and runs
-no deploy command; a build that runs `npx wrangler deploy` is configured as a
-Worker and will fail against this repo. See *If the build fails* below for
-what that looks like.
+There is nothing to change. `wrangler.toml` supplies the entry point
+(`src/index.js`), the assets directory (`public/`) and the D1 binding.
 
-`functions/` is picked up automatically — it sits at the repo root, beside
-`public/`, which is where Pages looks for it. `wrangler.toml` supplies the
-output directory and the D1 binding.
-
-Cloudflare runs `npm clean-install` because a `package.json` is present. That
-is expected, takes a few seconds, and compiles nothing.
+Cloudflare runs `npm clean-install` first because a `package.json` is present.
+That is expected, takes a few seconds, and compiles nothing.
 
 ### 3 — Set the secrets
 
@@ -90,9 +84,9 @@ Generate long random values — `openssl rand -hex 32` is fine for each — and
 set them against the project you just created:
 
 ```bash
-npx wrangler pages secret put ADMIN_TOKEN        --project-name <your-project>
-npx wrangler pages secret put UNSUBSCRIBE_SECRET --project-name <your-project>
-npx wrangler pages secret put IP_SALT            --project-name <your-project>
+npx wrangler secret put ADMIN_TOKEN
+npx wrangler secret put UNSUBSCRIBE_SECRET
+npx wrangler secret put IP_SALT
 ```
 
 They can also be added in the dashboard as encrypted environment variables,
@@ -101,39 +95,30 @@ endpoint refuses to run until `ADMIN_TOKEN` exists — the safe way round.
 
 ### Deploying by hand instead
 
-`npm run deploy` uploads `public/` directly, without involving GitHub. It is
-useful for a one-off, but a project created this way is a *direct upload*
-project, and Cloudflare may not let you attach a repository to it afterwards.
-Prefer the steps above.
+`npm run deploy` runs `wrangler deploy` from your machine — the same command
+Cloudflare runs on a push. Useful for trying something without committing it;
+the next push redeploys from the repository as usual.
 
 ## If the build fails
 
 **`Missing entry-point to Worker script or to assets directory`**, with a
-warning just above it reading *"It seems that you have run `wrangler deploy`
-on a Pages project, `wrangler pages deploy` should be used instead."*
+warning above it about `wrangler deploy` having been run on a Pages project.
 
-The project was created as a **Worker**, not a **Pages** project. Workers
-projects deploy by running `npx wrangler deploy`, which looks for a Worker
-entry point — a `main` in `wrangler.toml`, or an `[assets]` directory. This
-repo has neither, because a Pages project needs neither: it publishes
-`public/` and serves `functions/` alongside it.
+This is what the repo produced before it was a Worker, when `wrangler.toml`
+declared `pages_build_output_dir` and the code lived in `functions/`. If you
+see it now, `wrangler.toml` has lost its `main` or its `[assets]` block.
 
-Nothing in the repo needs changing. Create a Pages project against the same
-repository instead, per step 2 above, and delete the Worker one. You can tell
-the two apart from the build log: the Worker build runs `wrangler deploy`, and
-a Pages build does not run a deploy command at all.
-
-**`npm warn allow-scripts ... esbuild`** is not a failure. `esbuild` arrives
-as a dependency of `wrangler`, which only ever runs from your own machine —
-nothing in the published site uses it, so a skipped postinstall changes
-nothing. A build that is genuinely failing says so on its last line, with a
-non-zero exit.
+**`npm warn allow-scripts ... esbuild`** (and `workerd`) is not a failure.
+Both arrive as dependencies of `wrangler`, which only runs at build and deploy
+time — nothing in the served site uses them, so skipped postinstall scripts
+change nothing. A build that is genuinely failing says so on its last line,
+with a non-zero exit.
 
 ## Getting your list out
 
 ```bash
 curl -H "Authorization: Bearer $ADMIN_TOKEN" \
-     "https://your-site.pages.dev/api/export?format=csv" -o signups.csv
+     "https://your-site.workers.dev/api/export?format=csv" -o signups.csv
 ```
 
 Other options:
@@ -154,11 +139,12 @@ open it in Excel or Sheets.
 Create a [Resend](https://resend.com) API key, then:
 
 ```bash
-npx wrangler pages secret put RESEND_API_KEY
+npx wrangler secret put RESEND_API_KEY
 ```
 
 and add `NOTIFY_TO` (your address) and `NOTIFY_FROM` (a verified sender) as
-plain environment variables in the Pages dashboard. Without these the code
+plain environment variables in the dashboard, or under `[vars]` in
+`wrangler.toml`. Without these the code
 simply skips the notification — the signup still saves. Notification failures
 never fail a signup.
 
@@ -171,7 +157,7 @@ npm run dev
 ```
 
 That serves the real Functions against a local D1 file at
-`http://localhost:8788`.
+`http://localhost:8787`.
 
 ## What's left before you launch
 
@@ -188,14 +174,14 @@ It rewrites `index.html`, `privacy.html`, `app.js`, `robots.txt` and
 
 ### The domain
 
-The site works immediately on the free `*.pages.dev` URL Cloudflare gives you
+The site works immediately on the free `*.workers.dev` URL Cloudflare gives you
 — a custom domain is about how it reads, not whether it runs. To attach one:
-buy it anywhere, then in the Cloudflare dashboard go to your Pages project →
-*Custom domains* → *Set up a domain*. If the domain is already on Cloudflare
+buy it anywhere, then attach it to this Worker from its page in the
+Cloudflare dashboard. If the domain is already on Cloudflare
 the DNS record is added for you; otherwise Cloudflare shows the record to add
 at your registrar. HTTPS is automatic either way.
 
-Until you have one, you can run the command above with your `.pages.dev`
+Until you have one, you can run the command above with your `.workers.dev`
 address and the canonical URLs will at least be correct.
 
 ### The email address

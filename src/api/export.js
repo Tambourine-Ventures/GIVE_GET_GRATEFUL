@@ -4,13 +4,13 @@
  * Your private list export. Authenticate with the ADMIN_TOKEN secret:
  *
  *   curl -H "Authorization: Bearer $ADMIN_TOKEN" \
- *        https://yoursite.pages.dev/api/export?format=csv -o signups.csv
+ *        https://yoursite.workers.dev/api/export?format=csv -o signups.csv
  *
  * The CSV includes a ready-made unsubscribe link per row, so you can merge it
  * straight into whatever you send.
  */
 
-import { json, safeEqual, sign } from "../_shared.js";
+import { json, safeEqual, sign } from "../shared.js";
 
 const COLUMNS = [
   "id",
@@ -28,7 +28,7 @@ const COLUMNS = [
 
 const MAX_LIMIT = 10000;
 
-export async function onRequest(context) {
+export async function handle(context) {
   const { request, env } = context;
 
   if (request.method !== "GET") {

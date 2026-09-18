@@ -12,7 +12,7 @@
  *   RESEND_API_KEY + NOTIFY_TO + NOTIFY_FROM   email notification on new signups
  */
 
-import { json, hashIp } from "../_shared.js";
+import { json, hashIp } from "../shared.js";
 
 const VALID_INTERESTS = new Set(["book", "consulting", "both"]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -175,7 +175,7 @@ async function notify(env, signup) {
 }
 
 /** Single entry point: POST does the work, everything else gets a clear 405. */
-export async function onRequest(context) {
+export async function handle(context) {
   if (context.request.method !== "POST") {
     return json({ error: "Use POST." }, 405, { Allow: "POST" });
   }
