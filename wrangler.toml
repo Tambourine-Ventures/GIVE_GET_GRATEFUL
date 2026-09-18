@@ -26,7 +26,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "ggg-signups"
-database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+database_id = "5294e495-6e63-493f-a40d-8b2379391b5a"
 
 # Secrets are NOT set here — they'd end up in git. Set them with:
 #   npx wrangler secret put ADMIN_TOKEN
