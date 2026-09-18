@@ -1,0 +1,16 @@
+{
+  "name": "give-get-grateful",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Landing page for the book Give, Get, Grateful and related consulting engagements.",
+  "scripts": {
+    "dev": "wrangler pages dev public --d1=DB",
+    "db:create": "wrangler d1 create ggg-signups",
+    "db:init": "wrangler d1 execute ggg-signups --remote --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute ggg-signups --local --file=./schema.sql",
+    "deploy": "wrangler pages deploy public"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

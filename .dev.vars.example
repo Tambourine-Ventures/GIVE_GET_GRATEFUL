@@ -1,0 +1,8 @@
+# Copy to .dev.vars for `npm run dev`. .dev.vars is gitignored.
+ADMIN_TOKEN=local-dev-token
+UNSUBSCRIBE_SECRET=local-dev-unsubscribe-secret
+IP_SALT=local-dev-salt
+# Optional — leave unset and signup notifications are simply skipped.
+# RESEND_API_KEY=re_xxxxxxxx
+# NOTIFY_TO=you@example.com
+# NOTIFY_FROM=Give Get Grateful <hello@yourdomain.com>

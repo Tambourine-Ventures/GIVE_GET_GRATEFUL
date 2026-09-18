@@ -1,0 +1,24 @@
+# Cloudflare Pages configuration.
+# Docs: https://developers.cloudflare.com/pages/functions/wrangler-configuration/
+
+name = "give-get-grateful"
+compatibility_date = "2025-09-01"
+pages_build_output_dir = "public"
+
+# The signup database. Create it once with:
+#   npx wrangler d1 create ggg-signups
+# then paste the printed database_id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "ggg-signups"
+database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+
+# Secrets are NOT set here — they'd end up in git. Set them with:
+#   npx wrangler pages secret put ADMIN_TOKEN
+#   npx wrangler pages secret put UNSUBSCRIBE_SECRET
+#   npx wrangler pages secret put IP_SALT
+#   npx wrangler pages secret put RESEND_API_KEY    # optional
+# and the two plain vars below in the Pages dashboard (or here, they're not secret):
+# [vars]
+# NOTIFY_TO   = "you@example.com"
+# NOTIFY_FROM = "Give Get Grateful <hello@yourdomain.com>"
