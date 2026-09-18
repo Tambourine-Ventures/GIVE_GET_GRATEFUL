@@ -177,14 +177,18 @@ a:hover { color: var(--accent-dk); }
 
 /* ---------------- Split layouts ---------------- */
 .split { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .85fr); gap: clamp(36px, 6vw, 80px); align-items: start; }
-@media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
-.split-main > p { color: var(--ink-soft); max-width: 60ch; }
+/* Mirrors the columns as well as the order, so the text column stays the wide
+   one when the aside moves to the left. Declared before the stacking query
+   below, which must win at narrow widths. */
+.split-reverse { grid-template-columns: minmax(0, .85fr) minmax(0, 1.25fr); }
 .split-reverse .split-main { order: 2; }
 .split-reverse .split-side { order: 1; }
 @media (max-width: 900px) {
+  .split, .split-reverse { grid-template-columns: 1fr; }
   .split-reverse .split-main { order: 1; }
   .split-reverse .split-side { order: 2; }
 }
+.split-main > p { color: var(--ink-soft); max-width: 60ch; }
 
 .ticks { list-style: none; margin: 0 0 32px; padding: 0; }
 .ticks li { position: relative; padding-left: 30px; margin-bottom: 11px; color: var(--ink-soft); }
@@ -239,11 +243,15 @@ a:hover { color: var(--accent-dk); }
 
 /* ---------------- About ---------------- */
 .portrait {
-  aspect-ratio: 4 / 5; border-radius: var(--radius-lg);
-  background: linear-gradient(160deg, #EADDC8, #D9C6AC);
+  width: 100%; height: auto;
+  max-width: 454px; margin-inline: auto;   /* source is 454px wide — don't upscale */
+  border-radius: var(--radius-lg);
   border: 1px solid var(--rule);
-  display: grid; place-items: center;
-  color: var(--ink-faint); font-size: .9rem; text-align: center; line-height: 1.5;
+  box-shadow: 0 18px 44px -26px rgba(60, 40, 20, .55);
+}
+.credentials {
+  font-size: .95rem; font-weight: 500; letter-spacing: .04em;
+  color: var(--ink-faint); margin: -6px 0 22px;
 }
 .about-links { display: flex; gap: 22px; flex-wrap: wrap; font-weight: 500; margin-top: 24px; }
 
